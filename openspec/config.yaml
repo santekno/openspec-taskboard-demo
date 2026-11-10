@@ -7,6 +7,7 @@ context: |
   Sub-agents live in .claude/agents: product-manager (plan); backend-engineer, frontend-engineer
   (implementation); test-engineer, integration-test-engineer (tests); qa-engineer (read-only gate).
   One change = one branch = one PR. Only the main agent commits, pushes, and opens PRs.
+  Before explore or propose, read docs/legacy-map.md (structure, flows, risks) and keep it current.
 
 rules:
   proposal:
