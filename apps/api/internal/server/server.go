@@ -6,10 +6,13 @@ import (
 	"net/http"
 )
 
-// New returns the API handler with all routes registered.
+// New returns the API handler with all routes registered and a fresh task store.
 func New() http.Handler {
+	s := newStore()
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", health)
+	mux.HandleFunc("GET /api/tasks", listTasks(s))
+	mux.HandleFunc("POST /api/tasks", createTask(s))
 	return mux
 }
 
@@ -21,4 +24,8 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+func writeError(w http.ResponseWriter, status int, msg string) {
+	writeJSON(w, status, map[string]string{"error": msg})
 }

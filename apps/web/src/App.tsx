@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import TaskList from './TaskList';
 
 export default function App() {
   const [api, setApi] = useState('checking…');
@@ -14,6 +15,7 @@ export default function App() {
     <main style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 640, margin: '48px auto', padding: '0 16px' }}>
       <h1>Taskboard</h1>
       <p>API: {api}</p>
+      <TaskList />
     </main>
   );
 }
