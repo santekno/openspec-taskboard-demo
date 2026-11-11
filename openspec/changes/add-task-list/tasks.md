@@ -15,4 +15,4 @@
 
 ## 3. Review
 
-- [ ] 3.1 [qa-engineer] Check scenarios against code and tests, run all checks, give VERDICT: SHIP or DO-NOT-SHIP
+- [x] 3.1 [qa-engineer] Check scenarios against code and tests, run all checks, give VERDICT: SHIP or DO-NOT-SHIP
