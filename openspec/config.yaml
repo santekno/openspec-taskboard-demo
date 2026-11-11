@@ -1,0 +1,44 @@
+schema: spec-driven
+
+context: |
+  Taskboard: a demo task app. Monorepo with apps/api (Go 1.22+, net/http, in-memory store)
+  and apps/web (React + Vite + TypeScript, proxies /api to the Go API on port 8080).
+  Write all artifacts in English; keep normative keywords (SHALL/MUST, WHEN/THEN) as-is.
+  Sub-agents live in .claude/agents: product-manager (plan); backend-engineer, frontend-engineer
+  (implementation); test-engineer, integration-test-engineer (tests); qa-engineer (read-only gate).
+  One change = one branch = one PR. Only the main agent commits, pushes, and opens PRs.
+
+rules:
+  proposal:
+    - State the risk (low / medium / high) with a reason; high when it touches auth, stored data, public input, or deploy
+    - List what is deliberately deferred to a later change
+    - Keep the change to 0.5-1 day of work; propose a split if larger
+  specs:
+    - One change touches 1-2 capabilities; name them by domain (api/..., web/...)
+    - Include a scenario for invalid input and for the empty state when relevant
+  design:
+    - 'Start with a "## Flow" section: one Mermaid flowchart (```mermaid, flowchart LR or TD) of the change end to end, nodes named after real components or files, and classDef create / modify / delete applied to the nodes this change adds, edits, or removes, plus a small Legend subgraph. Use <br> for line breaks and do not start a label with "/".'
+    - 'Follow it with a "## File changes" table with columns Path | Action (Create / Modify / Delete) | Owner agent | Why, one row per file or folder touched; write "None" in a Delete row when nothing is removed. A reader who skips the rest of the design must still know what will change.'
+    - Name the API contract (method, path, request, response, status codes) when the API changes
+  tasks:
+    - 'Group order: implementation (every task starts with the owner tag, e.g. "[backend-engineer]" or "[frontend-engineer]"), then Tests ("[test-engineer]", "[integration-test-engineer]"), then Review'
+    - 'The Review group always has a "[qa-engineer]" task that ends with a ship or do-not-ship verdict; every loop back to stage 1 is added there as a new line'
+    - Every task names how it is verified (a command, a test name, or a diff)
+
+operations:
+  apply:
+    guidance:
+      - 'PIPELINE, in order; a stage starts only after the previous stage reports. Work on the branch feat/<change-name> (create it from main if you are not on it). Dispatch each stage to its sub-agent with the Agent tool; the main agent does not write application code itself.'
+      - 'MODEL ROUTING: before every sub-agent dispatch, apply "Sub-agent model routing" in CLAUDE.md. Use the frontmatter default; when an escalation trigger matches, pass the higher model in the Agent call model parameter for that call only, and state the trigger in one line (e.g. "backend-engineer on opus: design.md uses sync.Mutex").'
+      - 'Stage 1 - implementation, in parallel because files are separate: backend-engineer owns apps/api/** except *_test.go; frontend-engineer owns apps/web/src/** except *.test.ts(x), plus apps/web/package.json, package-lock.json, index.html, vite.config.ts, tsconfig.json. Nobody edits files owned by another agent. Skip an agent that has no tasks.'
+      - 'Stage 2 - test-engineer, alone: unit tests for every behavior in the specs (go test for apps/api, Vitest for apps/web); prove each new assertion fails once by a temporary mutation, then restore it; run the full suites.'
+      - 'Stage 3 - integration-test-engineer, alone: Playwright e2e in apps/web/e2e against the real Go API and Vite dev server (npm run e2e); report which tests ran and their results.'
+      - 'Stage 4 - qa-engineer, read-only gate: check every spec scenario against code and tests, run go vet, go test, npm run typecheck, npm test, npm run e2e, and end with SHIP or DO-NOT-SHIP plus the minimum fix list.'
+      - 'On DO-NOT-SHIP, or when any stage needs a code change, go BACK TO STAGE 1 for the affected agent and rerun the stages from there. Log each loop as a new line in the Review group of tasks.md.'
+      - 'The main agent ticks tasks.md checkboxes after each sub-agent reports, and commits at the end of every stage that changed files: `type(scope): message` (feat, fix, refactor, chore, docs, test, build; imperative, max 72 chars), blank line, 3-6 `- ` bullets.'
+      - 'DELIVERY after SHIP and all tasks ticked: git push -u origin HEAD, then gh pr create with a conventional-commit title and a body with exactly these sections: ## Summary, ## Changes, ## Verification (- [x] check — result), ## Operational Impact, ## Risk and Rollback. Report the PR URL and stop; the owner merges with squash after gh pr checks shows go-test, web-test, and e2e passing.'
+  archive:
+    guidance:
+      - 'Run the archive on a new branch from an up-to-date main named chore/archive-<change-name>.'
+      - 'After syncing specs, compare the requirement count with the delta and run openspec validate --specs --strict.'
+      - 'Commit, push, and open a PR titled chore(openspec): archive <change-name> with the same five-section body.'
