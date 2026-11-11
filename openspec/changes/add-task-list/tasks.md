@@ -6,7 +6,7 @@
 - [x] 1.2 [backend-engineer] Add `POST /api/tasks` with title trimming and validation; verify `curl -X POST -d '{"title":""}'` returns 400
 - [x] 1.3 [frontend-engineer] Show the task list with the "No tasks yet" empty state; verify `npm run typecheck`
 - [x] 1.4 [frontend-engineer] Add the labelled "Title" form with "Add task" and a role alert error; verify in the browser at localhost:5173
-- [ ] 1.5 [main agent] Update `docs/legacy-map.md`: structure, components, a flow for listing and adding tasks, tests; verify the diagram renders
+- [x] 1.5 [main agent] Update `docs/legacy-map.md`: structure, components, a flow for listing and adding tasks, tests; verify the diagram renders
 
 ## 2. Tests
 

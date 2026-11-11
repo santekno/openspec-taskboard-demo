@@ -11,10 +11,12 @@ apps/
   api/                         Go 1.22+, standard library only
     main.go                    entry point, listens on :8080 (PORT overrides)
     internal/server/server.go  routes + JSON helper
+    internal/server/tasks.go   task store (sync.Mutex) + list/create handlers
     internal/server/server_test.go
   web/                         React 19 + Vite + TypeScript
     index.html, src/main.tsx   entry point, mounts <App/>
-    src/App.tsx                the only page
+    src/App.tsx                the only page; renders <TaskList/>
+    src/TaskList.tsx           task list, empty state, Add task form
     src/App.test.tsx           Vitest + Testing Library
     e2e/home.spec.ts           Playwright, starts API + Vite
     vite.config.ts             dev server :5173, proxies /api → :8080
@@ -27,7 +29,7 @@ scripts/                       check.sh, preflight.sh, setup-agents.sh, make-wor
 | Entry | File | Notes |
 | --- | --- | --- |
 | API process | `apps/api/main.go` `main()` | `http.ListenAndServe(":8080", server.New())`, `PORT` env overrides |
-| HTTP routes | `apps/api/internal/server/server.go` `New()` | one `http.ServeMux`; only `GET /api/health` |
+| HTTP routes | `apps/api/internal/server/server.go` `New()` | one `http.ServeMux`; `GET /api/health`, `GET` and `POST /api/tasks` |
 | Web app | `apps/web/src/main.tsx` | `createRoot(...).render(<App/>)` in `StrictMode` |
 | Dev proxy | `apps/web/vite.config.ts` | `/api` → `http://localhost:8080` |
 
@@ -38,7 +40,9 @@ scripts/                       check.sh, preflight.sh, setup-agents.sh, make-wor
 | `server.New` | `server.go` | builds the mux, registers routes |
 | `health` | `server.go` | answers `{"status":"ok"}` |
 | `writeJSON` | `server.go` | sets `Content-Type: application/json`, writes status, encodes body (error ignored) |
-| `App` | `App.tsx` | heading "Taskboard" and the line "API: <status>" |
+| `App` | `App.tsx` | heading "Taskboard", the line "API: <status>", and `TaskList` |
+| `store`, `listTasks`, `createTask` | `tasks.go` | in-memory tasks, title trimmed, 1–100 characters |
+| `TaskList` | `TaskList.tsx` | loads tasks, shows "No tasks yet", posts new tasks, shows API errors as an alert |
 
 ## 4. Flows
 
@@ -78,6 +82,27 @@ sequenceDiagram
     end
 ```
 
+### 4.3 List and add tasks (added by `add-task-list`)
+
+```mermaid
+sequenceDiagram
+    participant U as Browser
+    participant T as TaskList.tsx
+    participant API as tasks.go
+    participant S as store (sync.Mutex)
+    T->>API: GET /api/tasks
+    API->>S: list()
+    S-->>T: 200 [] or tasks (oldest first)
+    U->>T: type title, press "Add task"
+    T->>API: POST /api/tasks {"title"}
+    alt title valid (trimmed, 1-100 chars)
+        API->>S: add(title)
+        API-->>T: 201 task, appended, input cleared
+    else invalid
+        API-->>T: 400 {"error"}, shown as alert, text kept
+    end
+```
+
 ## 5. Dependencies
 
 | Side | Runtime | Dev / test |
@@ -92,6 +117,8 @@ sequenceDiagram
 | --- | --- | --- |
 | Health returns ok | `server_test.go` `TestHealth` | content type, 405, 404 not tested |
 | Home shows "API: ok" | `App.test.tsx`, `e2e/home.spec.ts` | "checking…" and "unreachable" not tested |
+| Baseline (health, home) | `baseline_test.go`, `App.baseline.test.tsx` | — |
+| Tasks API and list | `tasks_test.go`, `TaskList.test.tsx`, `e2e/tasks.spec.ts` | — |
 
 ## 7. Risks and refactor candidates
 
@@ -102,6 +129,7 @@ sequenceDiagram
 | R3 | No graceful shutdown or timeouts on the server | `main.go` | `http.Server` with timeouts + shutdown |
 | R4 | `fetch` has no timeout; a hung API leaves "checking…" forever | `App.tsx` | abort after N seconds |
 | R5 | Inline styles in `App.tsx` | `App.tsx` | move to CSS when the UI grows |
+| R6 | Tasks live in memory and vanish on restart | `tasks.go` | persistence change (deferred in `add-task-list`) |
 
 Each refactor is its own change with a **MODIFIED** delta (or `skip_specs` for pure refactors) after the baseline exists.
 
@@ -111,5 +139,7 @@ Each refactor is its own change with a **MODIFIED** delta (or `skip_specs` for p
 | --- | --- | --- |
 | `api/health` | health endpoint, 405 on wrong method, 404 on unknown path | 4.1 |
 | `web/home` | heading, "API: checking… / ok / unreachable" | 4.2 |
+| `api/tasks` | list and create tasks (spec from `add-task-list`) | 4.3 |
+| `web/task-list` | list, empty state, add form (spec from `add-task-list`) | 4.3 |
 
 Next change: `baseline-taskboard` writes these two as as-is specs and adds characterization tests for the gaps in section 6.
