@@ -2,10 +2,10 @@
 
 ## 1. Implementation
 
-- [ ] 1.1 [backend-engineer] Add the in-memory task store and `GET /api/tasks`; verify with `go vet ./...` and `curl localhost:8080/api/tasks` returning `[]`
-- [ ] 1.2 [backend-engineer] Add `POST /api/tasks` with title trimming and validation; verify `curl -X POST -d '{"title":""}'` returns 400
-- [ ] 1.3 [frontend-engineer] Show the task list with the "No tasks yet" empty state; verify `npm run typecheck`
-- [ ] 1.4 [frontend-engineer] Add the labelled "Title" form with "Add task" and a role alert error; verify in the browser at localhost:5173
+- [x] 1.1 [backend-engineer] Add the in-memory task store and `GET /api/tasks`; verify with `go vet ./...` and `curl localhost:8080/api/tasks` returning `[]`
+- [x] 1.2 [backend-engineer] Add `POST /api/tasks` with title trimming and validation; verify `curl -X POST -d '{"title":""}'` returns 400
+- [x] 1.3 [frontend-engineer] Show the task list with the "No tasks yet" empty state; verify `npm run typecheck`
+- [x] 1.4 [frontend-engineer] Add the labelled "Title" form with "Add task" and a role alert error; verify in the browser at localhost:5173
 
 ## 2. Tests
 
