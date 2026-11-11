@@ -11,7 +11,7 @@
 
 - [x] 2.1 [test-engineer] Go table tests for every api/tasks scenario; verify `go test ./...` and one mutation per assertion
 - [x] 2.2 [test-engineer] Vitest tests for every web/task-list scenario; verify `npm test`
-- [ ] 2.3 [integration-test-engineer] Playwright e2e: add a task and see it listed, see the error for an empty title; verify `npm run e2e`
+- [x] 2.3 [integration-test-engineer] Playwright e2e: add a task and see it listed, see the error for an empty title; verify `npm run e2e`
 
 ## 3. Review
 
