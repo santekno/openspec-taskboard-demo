@@ -31,6 +31,16 @@ bash scripts/preflight.sh                  # tools, gh login, model-routing env
 bash scripts/check.sh                       # go test, vitest, typecheck, e2e
 ```
 
+The demo pushes branches, opens PRs, and merges into `main`, so run it in **your
+own copy**, not in this repo. One command creates it (private by default) with
+`main` and all `demo/*` branches, and keeps this repo as `upstream`:
+
+```bash
+bash scripts/make-workspace.sh taskboard-demo        # add --public to make it public
+```
+
+Make a fresh copy (another name) for each rehearsal, so the live run starts from a clean `main`.
+
 Optional, to stop permission prompts during the live run (machine-only, git-ignored):
 
 ```bash
@@ -57,6 +67,8 @@ If a live step stalls, jump to the next safe point and keep going:
 ```bash
 git switch -c demo-live origin/demo/after-propose   # or demo/ready, demo/after-apply, demo/after-archive
 ```
+
+Skipping ahead to `demo/after-apply` mid-demo? Push it as the PR branch: `git push -u origin demo-live:feat/add-task-list`, then `gh pr create --fill`.
 
 What each fallback branch contains:
 
@@ -91,6 +103,7 @@ apps/web/                  React + Vite (typecheck, vitest, playwright)
 scripts/setup-agents.sh    writes CLAUDE.md, openspec/config.yaml, .claude/agents/*.md
 scripts/check.sh           every CI check locally (--no-e2e to skip Playwright)
 scripts/preflight.sh       presenter-laptop checks
+scripts/make-workspace.sh  your own GitHub copy with all demo/* branches
 ```
 
 ## Commands cheat sheet
