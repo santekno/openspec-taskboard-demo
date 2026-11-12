@@ -1,0 +1,50 @@
+schema: spec-driven
+
+context: |
+  Bookmarks: a new product, built from zero with spec-driven development. Nothing exists yet
+  except this config, CLAUDE.md, and the sub-agents.
+  Product vision: a personal reading list. Users save a link (URL + title) and see their saved
+  links newest first. Single user, no login in the first release.
+  Stack (decided before the first change, do not re-litigate in proposals): monorepo with
+  apps/api (Go 1.22+, net/http, standard library only, in-memory store, port 8080) and
+  apps/web (React + Vite + TypeScript, proxies /api to port 8080, port 5173).
+  Tests: go test -race, Vitest + Testing Library, Playwright e2e. CI: GitHub Actions with jobs
+  go-test, web-test, e2e.
+  Write all artifacts in English; keep normative keywords (SHALL/MUST, WHEN/THEN) as-is.
+  Sub-agents live in .claude/agents. One change = one branch = one PR. Only the main agent
+  commits, pushes, and opens PRs.
+
+rules:
+  proposal:
+    - 'The first change is a walking skeleton: the smallest end-to-end slice (one read, one write, UI, tests, CI). Call it init-<product>.'
+    - State the risk (low / medium / high) with a reason; high when it touches auth, stored data, public input, or deploy
+    - List what is deliberately deferred to a later change (the vision is bigger than the first change)
+    - Keep the change to 0.5-1 day of work; propose a split if larger
+  specs:
+    - One change touches 1-2 capabilities; name them by domain (api/..., web/...)
+    - Include a scenario for invalid input and for the empty state when relevant
+  design:
+    - 'Start with a "## Flow" section: one Mermaid flowchart (```mermaid, flowchart LR or TD) of the change end to end, nodes named after real components or files, and classDef create / modify / delete applied to the nodes this change adds, edits, or removes, plus a small Legend subgraph. Use <br> for line breaks and do not start a label with "/".'
+    - 'Follow it with a "## File changes" table with columns Path | Action (Create / Modify / Delete) | Owner agent | Why, one row per file or folder touched; write "None" in a Delete row when nothing is removed.'
+    - 'In a greenfield change, add a "## Scaffold decisions" section: module names, folder layout, ports, scripts, and the CI jobs, so later changes follow them.'
+    - Name the API contract (method, path, request, response, status codes) when the API changes
+  tasks:
+    - 'Group order: implementation (every task starts with the owner tag, e.g. "[backend-engineer]" or "[frontend-engineer]"), then Tests ("[test-engineer]", "[integration-test-engineer]"), then Review'
+    - 'The Review group always has a "[qa-engineer]" task that ends with a ship or do-not-ship verdict; every loop back to stage 1 is added there as a new line'
+    - Every task names how it is verified (a command, a test name, or a diff)
+
+operations:
+  apply:
+    guidance:
+      - 'PIPELINE, in order; a stage starts only after the previous stage reports. Work on the branch feat/<change-name>. Dispatch each stage to its sub-agent with the Agent tool; the main agent does not write application code itself.'
+      - 'MODEL ROUTING: before every sub-agent dispatch, apply "Sub-agent model routing" in CLAUDE.md.'
+      - 'Stage 1 - implementation, in parallel: backend-engineer owns apps/api/** except *_test.go (it also creates go.mod and main.go); frontend-engineer owns apps/web/** except tests, e2e/, and playwright.config.ts (it scaffolds package.json, index.html, vite.config.ts, tsconfig.json and runs npm install).'
+      - 'Stage 2 - test-engineer, alone: unit tests for every spec scenario (go test, Vitest, adding the test setup files); prove each new assertion fails once by a temporary mutation; run the full suites.'
+      - 'Stage 3 - integration-test-engineer, alone: playwright.config.ts (webServer for both apps), e2e tests in apps/web/e2e, and .github/workflows/ci.yml with go-test, web-test, e2e; run npm run e2e.'
+      - 'Stage 4 - qa-engineer, read-only gate: check every scenario against code and tests, run bash scripts/check.sh, and end with SHIP or DO-NOT-SHIP plus the minimum fix list.'
+      - 'On DO-NOT-SHIP go BACK TO STAGE 1 for the affected agent; log each loop in the Review group of tasks.md.'
+      - 'Commit at the end of every stage that changed files: `type(scope): message`, blank line, 3-6 `- ` bullets. DELIVERY after SHIP: push, gh pr create with ## Summary, ## Changes, ## Verification, ## Operational Impact, ## Risk and Rollback.'
+  archive:
+    guidance:
+      - 'Run the archive on chore/archive-<change-name> from an up-to-date main.'
+      - 'After syncing specs, write a real ## Purpose in every new spec and run openspec validate --specs --strict.'
