@@ -2,10 +2,10 @@
 
 ## 1. Implementation
 
-- [ ] 1.1 [backend-engineer] Scaffold `apps/api` (go.mod, main.go, server.go with `GET /api/health`); verify `go vet ./...` and `curl localhost:8080/api/health`
-- [ ] 1.2 [backend-engineer] Add the bookmark store, `GET` and `POST /api/bookmarks` with URL and title validation; verify `curl -X POST -d '{"url":"x","title":"a"}'` returns 400
-- [ ] 1.3 [frontend-engineer] Scaffold `apps/web` (Vite + React + TS, `/api` proxy, npm scripts from Scaffold decisions); verify `npm run typecheck`
-- [ ] 1.4 [frontend-engineer] Add `BookmarkList` with empty state, labelled URL and Title inputs, Save button, and role alert errors; verify in the browser at localhost:5173
+- [x] 1.1 [backend-engineer] Scaffold `apps/api` (go.mod, main.go, server.go with `GET /api/health`); verify `go vet ./...` and `curl localhost:8080/api/health`
+- [x] 1.2 [backend-engineer] Add the bookmark store, `GET` and `POST /api/bookmarks` with URL and title validation; verify `curl -X POST -d '{"url":"x","title":"a"}'` returns 400
+- [x] 1.3 [frontend-engineer] Scaffold `apps/web` (Vite + React + TS, `/api` proxy, npm scripts from Scaffold decisions); verify `npm run typecheck`
+- [x] 1.4 [frontend-engineer] Add `BookmarkList` with empty state, labelled URL and Title inputs, Save button, and role alert errors; verify in the browser at localhost:5173
 
 ## 2. Tests
 
