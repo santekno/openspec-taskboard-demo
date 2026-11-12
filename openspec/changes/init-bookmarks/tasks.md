@@ -11,7 +11,7 @@
 
 - [x] 2.1 [test-engineer] Go table tests for every api/bookmarks scenario; verify `go test -race ./...` and one mutation per assertion
 - [x] 2.2 [test-engineer] Vitest setup and tests for every web/bookmark-list scenario; verify `npm test`
-- [ ] 2.3 [integration-test-engineer] Playwright config with both web servers, e2e for save and invalid URL, and `.github/workflows/ci.yml`; verify `npm run e2e`
+- [x] 2.3 [integration-test-engineer] Playwright config with both web servers, e2e for save and invalid URL, and `.github/workflows/ci.yml`; verify `npm run e2e`
 
 ## 3. Review
 
