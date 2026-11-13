@@ -65,6 +65,17 @@ What each fallback branch contains:
 - `demo/after-apply`: + reference implementation and tests (`GET`/`POST /api/tasks`, `TaskList` UI, unit tests, e2e), all tasks checked.
 - `demo/after-archive`: change archived, `openspec/specs/api/tasks` and `openspec/specs/web/task-list` created.
 
+## Scenario 2: integrate with an existing system (`integration/*`)
+
+`integration/start` adds `apps/users-auth`, a stand-in for the company's existing users and
+auth service (port 8081), and its contract `contracts/users-auth.openapi.yaml`. Taskboard
+must use it **without changing it**: the next change assigns tasks to users that live there.
+
+```bash
+(cd apps/users-auth && go run .)        # port 8081
+curl localhost:8081/users/u-1           # {"id":"u-1","name":"Ayu Lestari",...}
+```
+
 ## Model routing
 
 Defaults live in each agent's frontmatter (`model:`). Before every dispatch the

@@ -1,0 +1,59 @@
+# Contract of the existing users-auth service, owned by the Identity team.
+# Taskboard is a consumer: it may rely on what is written here and nothing else.
+openapi: 3.1.0
+info:
+  title: users-auth
+  version: 2.3.0
+  description: Users and token verification. Base URL in Taskboard comes from USERS_AUTH_URL (default http://localhost:8081).
+paths:
+  /users/{id}:
+    get:
+      summary: Get one user by id
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, example: u-1 } }
+      responses:
+        "200":
+          description: The user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+              example: { id: u-1, name: Ayu Lestari, email: ayu@example.com }
+        "404":
+          description: Unknown id
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { error: user not found }
+  /auth/verify:
+    post:
+      summary: Verify a bearer token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [token], properties: { token: { type: string } } }
+      responses:
+        "200":
+          description: Token is valid
+          content:
+            application/json:
+              schema: { type: object, required: [userId], properties: { userId: { type: string } } }
+        "401":
+          description: Token is invalid
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, name, email]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
