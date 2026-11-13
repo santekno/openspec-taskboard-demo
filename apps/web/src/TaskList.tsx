@@ -1,10 +1,11 @@
 import { FormEvent, useEffect, useState } from 'react';
 
-export type Task = { id: number; title: string; done: boolean };
+export type Task = { id: number; title: string; done: boolean; assignee?: { id: string; name: string } };
 
 export default function TaskList() {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [title, setTitle] = useState('');
+  const [assigneeId, setAssigneeId] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -20,7 +21,7 @@ export default function TaskList() {
     const res = await fetch('/api/tasks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
+      body: JSON.stringify(assigneeId.trim() ? { title, assigneeId: assigneeId.trim() } : { title }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -29,6 +30,7 @@ export default function TaskList() {
     }
     setTasks((prev) => [...(prev ?? []), data as Task]);
     setTitle('');
+    setAssigneeId('');
   }
 
   return (
@@ -37,6 +39,8 @@ export default function TaskList() {
       <form onSubmit={onSubmit}>
         <label htmlFor="task-title">Title</label>{' '}
         <input id="task-title" value={title} onChange={(e) => setTitle(e.target.value)} />{' '}
+        <label htmlFor="task-assignee">Assignee ID</label>{' '}
+        <input id="task-assignee" value={assigneeId} placeholder="optional, e.g. u-1" onChange={(e) => setAssigneeId(e.target.value)} />{' '}
         <button type="submit">Add task</button>
       </form>
       {error && <p role="alert">{error}</p>}
@@ -47,7 +51,10 @@ export default function TaskList() {
       ) : (
         <ul>
           {tasks.map((t) => (
-            <li key={t.id}>{t.title}</li>
+            <li key={t.id}>
+              {t.title}
+              {t.assignee && <small> · Assigned to {t.assignee.name}</small>}
+            </li>
           ))}
         </ul>
       )}
