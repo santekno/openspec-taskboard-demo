@@ -11,7 +11,7 @@
 
 - [x] 2.1 [test-engineer] Go tests for every api/tasks scenario with a fake `UserLookup`, plus client tests against an httptest fake; verify `go test -race ./...`
 - [x] 2.2 [test-engineer] Vitest tests for the new web/task-list scenarios; verify `npm test`
-- [ ] 2.3 [integration-test-engineer] Contract test against the running users-auth, Playwright with three servers, CI `contract` job; verify `bash scripts/check.sh`
+- [x] 2.3 [integration-test-engineer] Contract test against the running users-auth, Playwright with three servers, CI `contract` job; verify `bash scripts/check.sh`
 
 ## 3. Review
 

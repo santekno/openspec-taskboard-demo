@@ -7,6 +7,12 @@ export default defineConfig({
   webServer: [
     {
       command: 'go run .',
+      cwd: '../users-auth',
+      url: 'http://localhost:8081/health',
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: 'go run .',
       cwd: '../api',
       url: 'http://localhost:8080/api/health',
       reuseExistingServer: !process.env.CI,

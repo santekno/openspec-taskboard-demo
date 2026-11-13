@@ -19,6 +19,27 @@ jobs:
       - run: go vet ./...
       - run: go test -race ./...
 
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/users-auth/go.mod
+      - name: users-auth tests
+        working-directory: apps/users-auth
+        run: go test ./...
+      - name: Start users-auth
+        working-directory: apps/users-auth
+        run: |
+          go run . &
+          for i in $(seq 1 30); do curl -sf localhost:8081/health && break; sleep 1; done
+      - name: Contract test (Taskboard client vs users-auth)
+        working-directory: apps/api
+        env:
+          USERS_AUTH_URL: http://localhost:8081
+        run: go test -run Contract -v ./internal/usersauth/
+
   web-test:
     runs-on: ubuntu-latest
     defaults:
