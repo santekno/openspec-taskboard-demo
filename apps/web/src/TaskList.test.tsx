@@ -49,3 +49,27 @@ test('API rejects the title: shows the error as an alert and keeps the text', as
   expect(await screen.findByRole('alert')).toHaveTextContent('title is required');
   expect(screen.getByLabelText('Title')).toHaveValue('   ');
 });
+
+test('task added with an assignee: shows "Assigned to" and sends assigneeId', async () => {
+  mockFetch([], { ok: true, body: { id: 1, title: 'Buy milk', done: false, assignee: { id: 'u-1', name: 'Ayu Lestari' } } });
+  render(<TaskList />);
+  await screen.findByText('No tasks yet');
+  await userEvent.type(screen.getByLabelText('Title'), 'Buy milk');
+  await userEvent.type(screen.getByLabelText('Assignee ID'), 'u-1');
+  await userEvent.click(screen.getByRole('button', { name: 'Add task' }));
+  expect(await screen.findByRole('listitem')).toHaveTextContent('Assigned to Ayu Lestari');
+  const post = vi.mocked(fetch).mock.calls.find(([, init]) => init?.method === 'POST')!;
+  expect(JSON.parse(post[1]!.body as string)).toEqual({ title: 'Buy milk', assigneeId: 'u-1' });
+  expect(screen.getByLabelText('Assignee ID')).toHaveValue('');
+});
+
+test('mixed list: only the assigned task shows its assignee', async () => {
+  mockFetch([
+    { id: 1, title: 'Buy milk', done: false, assignee: { id: 'u-1', name: 'Ayu Lestari' } },
+    { id: 2, title: 'Call mom', done: false },
+  ]);
+  render(<TaskList />);
+  const items = await screen.findAllByRole('listitem');
+  expect(items[0]).toHaveTextContent('Assigned to Ayu Lestari');
+  expect(items[1]).not.toHaveTextContent('Assigned to');
+});
