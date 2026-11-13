@@ -11,7 +11,10 @@ apps/
   api/                         Go 1.22+, standard library only
     main.go                    entry point, listens on :8080 (PORT overrides)
     internal/server/server.go  routes + JSON helper
-    internal/server/tasks.go   task store (sync.Mutex) + list/create handlers
+    internal/server/tasks.go   task store (sync.Mutex) + list/create handlers, optional assignee
+    internal/usersauth/        client for the external users-auth service (2 s timeout)
+  users-auth/                  stand-in for the Identity team's service (:8081), NOT ours
+contracts/users-auth.openapi.yaml   what we may rely on
     internal/server/server_test.go
   web/                         React 19 + Vite + TypeScript
     index.html, src/main.tsx   entry point, mounts <App/>
@@ -103,13 +106,34 @@ sequenceDiagram
     end
 ```
 
+### 4.4 Assign a task (added by `add-task-assignee`)
+
+```mermaid
+sequenceDiagram
+    participant T as TaskList.tsx
+    participant API as tasks.go
+    participant C as usersauth client
+    participant UA as users-auth (external)
+    T->>API: POST /api/tasks {"title","assigneeId"}
+    API->>C: GetUser(id)
+    C->>UA: GET /users/{id} (2 s timeout)
+    alt 200
+        UA-->>API: {"id","name"}
+        API-->>T: 201 task with assignee
+    else 404
+        API-->>T: 400 assignee not found
+    else error or timeout
+        API-->>T: 502 users-auth unavailable
+    end
+```
+
 ## 5. Dependencies
 
 | Side | Runtime | Dev / test |
 | --- | --- | --- |
 | API | Go standard library only | `go test -race` |
 | Web | react, react-dom | vite, vitest, @testing-library/*, @playwright/test, typescript |
-| External systems | none | — |
+| External systems | **users-auth** (Identity team), `USERS_AUTH_URL`, contract in `contracts/` | contract test vs the running service |
 
 ## 6. Tests today
 
@@ -119,6 +143,7 @@ sequenceDiagram
 | Home shows "API: ok" | `App.test.tsx`, `e2e/home.spec.ts` | "checking…" and "unreachable" not tested |
 | Baseline (health, home) | `baseline_test.go`, `App.baseline.test.tsx` | — |
 | Tasks API and list | `tasks_test.go`, `TaskList.test.tsx`, `e2e/tasks.spec.ts` | — |
+| Assignee + users-auth | `assignee_test.go`, `client_test.go`, `client_contract_test.go`, `e2e/assignee.spec.ts` | — |
 
 ## 7. Risks and refactor candidates
 
@@ -130,6 +155,7 @@ sequenceDiagram
 | R4 | `fetch` has no timeout; a hung API leaves "checking…" forever | `App.tsx` | abort after N seconds |
 | R5 | Inline styles in `App.tsx` | `App.tsx` | move to CSS when the UI grows |
 | R6 | Tasks live in memory and vanish on restart | `tasks.go` | persistence change (deferred in `add-task-list`) |
+| R7 | Assignee name is a snapshot; renames in users-auth are not reflected | `tasks.go` | caching / refresh change |
 
 Each refactor is its own change with a **MODIFIED** delta (or `skip_specs` for pure refactors) after the baseline exists.
 
@@ -141,5 +167,6 @@ Each refactor is its own change with a **MODIFIED** delta (or `skip_specs` for p
 | `web/home` | heading, "API: checking… / ok / unreachable" | 4.2 |
 | `api/tasks` | list and create tasks (spec from `add-task-list`) | 4.3 |
 | `web/task-list` | list, empty state, add form (spec from `add-task-list`) | 4.3 |
+| `ext/users-auth` | the users-auth calls we rely on (spec from `add-task-assignee`) | 4.4 |
 
 Next change: `baseline-taskboard` writes these two as as-is specs and adds characterization tests for the gaps in section 6.
