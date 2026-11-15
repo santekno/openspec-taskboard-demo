@@ -7,14 +7,14 @@ ways a team starts with SDD, each as runnable branches:
 | --- | --- | --- |
 | 1. From zero (greenfield) | `greenfield/start`, `greenfield/after-propose`, `greenfield/after-apply` | New `bookmarks-app`: walking skeleton first |
 | 2. From zero, integrating an existing system | `integration/start`, `integration/after-propose`, `integration/after-apply` | Assign tasks to users from the existing `users-auth` service |
-| 3. Continue an existing / legacy product | `demo/ready`, `demo/baseline`, `demo/after-propose`, `demo/after-apply`, `demo/after-archive` | Taskboard: **baseline first**, then the `add-task-list` delta |
+| 3. Continue an existing / legacy product | `demo/ready`, `demo/mapped`, `demo/baseline`, `demo/after-propose`, `demo/after-apply`, `demo/after-archive` | Taskboard: **map + baseline first**, then the `add-task-list` delta |
 
 ```mermaid
 flowchart LR
   Q{"Is there code already?"} -->|no| G["1 · greenfield/*<br>vision + stack in config.yaml"]
   Q -->|yes| R{"Does the new feature<br>call another system?"}
   R -->|yes| I["2 · integration/*<br>contract spec + contract test"]
-  R -->|no| L["3 · demo/*<br>baseline spec + characterization tests"]
+  R -->|no| L["3 · demo/*<br>code map + baseline spec + characterization tests"]
 ```
 
 The live demo runs scenario 3. One small change (`add-task-list`) goes from an
@@ -31,8 +31,9 @@ idea to a merged PR, built by six Claude Code sub-agents working as a pipeline:
 
 The app is deliberately tiny: a Go 1.22+ `net/http` API (port 8080) and a
 React + Vite web app (port 5173, proxies `/api`). `main` only has a health
-check and a home page: that is the "existing product". Before any feature, it is
-**baselined**: its current behavior becomes specs and characterization tests.
+check and a home page: that is the "existing product". Before any feature it is
+**mapped** (`docs/legacy-map.md`: structure, flows, risks) and **baselined** (its current
+behavior becomes specs and characterization tests).
 
 ## Before the demo
 
@@ -73,14 +74,21 @@ agent's model and the routing below does nothing.
 | --- | --- | --- |
 | 1. Init OpenSpec | `openspec init --tools claude` | |
 | 2–3. Sub-agents + workflow | `bash scripts/setup-agents.sh` (CLAUDE.md, `openspec/config.yaml`, 6 agents) | `demo/ready` |
-| 4. Baseline (**required**) | `/opsx:explore Map what Taskboard does today…`, `/opsx:propose baseline-taskboard`, characterization tests, `openspec archive baseline-taskboard --yes` | `demo/baseline` |
+| 4a. Map the code (**required**) | `/opsx:propose map-taskboard` (docs-only, `skip_specs: true`) → `docs/legacy-map.md`, then `openspec archive map-taskboard --yes` | `demo/mapped` |
+| 4b. Baseline (**required**) | `/opsx:propose baseline-taskboard` from the map's capability candidates, characterization tests, `openspec archive baseline-taskboard --yes` | `demo/baseline` |
 | 5. Explore | `/opsx:explore I want users to see and add tasks on the Taskboard home page…` | |
 | 6. Propose | `git switch -c feat/add-task-list` then `/opsx:propose add-task-list` | `demo/after-propose` |
 | 7. Apply | `/clear` then `/opsx:apply add-task-list` (4 stages + QA loop) | `demo/after-apply` |
 | 8. PR | The apply guidance ends with `gh pr create`; then `gh pr checks --watch` | |
 | 9. Archive | `/opsx:archive add-task-list` on `chore/archive-add-task-list` | `demo/after-archive` |
 
-Why step 4 is required: on an existing product `openspec/specs/` starts empty. Without
+Why step 4 is required: on an existing product nobody has written down how the code is
+built, and `openspec/specs/` starts empty. **4a** is increment 1: a docs-only change that
+writes `docs/legacy-map.md` (structure, entry points, components, one Mermaid diagram per
+flow, dependencies, test gaps, risks and refactor candidates, capability candidates). It
+is a living document: every later change updates it, and `config.yaml` tells agents to
+read it first. It is also the input for refactor planning. **4b** turns the map's
+capability candidates into specs. On an existing product `openspec/specs/` starts empty. Without
 a baseline, the first proposal would describe old behavior as new and nobody could tell
 what must stay the same. The baseline records **what the code does today** (not what it
 should do) as `ADDED` specs, locks it with tests in separate files, and is archived before
@@ -89,7 +97,7 @@ any feature work. Every change after that is a pure delta.
 If a live step stalls, jump to the next safe point and keep going:
 
 ```bash
-git switch -c demo-live origin/demo/after-propose   # or demo/ready, demo/baseline, demo/after-apply, demo/after-archive
+git switch -c demo-live origin/demo/after-propose   # or demo/ready, demo/mapped, demo/baseline, demo/after-apply, demo/after-archive
 ```
 
 Skipping ahead to `demo/after-apply` mid-demo? Push it as the PR branch: `git push -u origin demo-live:feat/add-task-list`, then `gh pr create --fill`.
@@ -97,10 +105,22 @@ Skipping ahead to `demo/after-apply` mid-demo? Push it as the PR branch: `git pu
 What each fallback branch contains:
 
 - `demo/ready`: `main` + `openspec init --tools claude` + `scripts/setup-agents.sh`.
+- `demo/mapped`: + change `map-taskboard` archived (docs-only): `docs/legacy-map.md` and a `context` line pointing at it.
 - `demo/baseline`: + change `baseline-taskboard` archived: `openspec/specs/api/health` and `openspec/specs/web/home` (as-is), `baseline_test.go` and `App.baseline.test.tsx`.
 - `demo/after-propose`: + `openspec/changes/add-task-list/` (proposal, 2 delta specs, design with a Mermaid flow and file-change table, tasks tagged by agent). Passes `openspec validate --strict`.
 - `demo/after-apply`: + reference implementation and tests (`GET`/`POST /api/tasks`, `TaskList` UI, unit tests, e2e), all tasks checked.
 - `demo/after-archive`: change archived, `openspec/specs/api/tasks` and `openspec/specs/web/task-list` created (4 specs in total).
+
+## Demo all three scenarios
+
+All three are runnable. In one session, run scenario 3 live end to end and show the
+other two as short demos from their branches:
+
+| Block | Scenario | Live part | Jump to | Show |
+| --- | --- | --- | --- | --- |
+| Main (45–60 min) | 3 · legacy | steps 1–9 above | `demo/*` fallbacks | map, baseline, delta, pipeline, archive |
+| Short (~10 min) | 1 · from zero | `/opsx:explore` + `/opsx:propose init-bookmarks` on `greenfield/start` | `greenfield/after-apply` | `bash scripts/check.sh`, the Scaffold decisions in design.md |
+| Short (~10 min) | 2 · integration | `/opsx:propose add-task-assignee` on `integration/start` | `integration/after-apply` | contract test against users-auth, e2e across 3 processes |
 
 ## Scenario 1: from zero (`greenfield/*`)
 
