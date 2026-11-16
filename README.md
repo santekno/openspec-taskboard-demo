@@ -34,6 +34,17 @@ claude
 
 Stuck? `git switch -c gf-live origin/greenfield/after-propose` (or `after-apply`).
 
+## Run the app
+
+After apply (`greenfield/after-apply`), one command starts the API (:8080) and the web app (:5173);
+Ctrl+C stops both:
+
+```bash
+bash scripts/dev.sh        # open http://localhost:5173
+```
+
+Or separately: `cd apps/api && go run .` and `cd apps/web && npm run dev`.
+
 ## What is different from the other scenarios
 
 - **`context` carries the product vision and the stack decision**, because there is no code for the agent to read.
