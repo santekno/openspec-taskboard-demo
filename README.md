@@ -47,6 +47,7 @@ cd openspec-taskboard-demo
 bash scripts/preflight.sh                  # tools, gh login, model-routing env
 (cd apps/web && npm ci && npx playwright install chromium)
 bash scripts/check.sh                       # go test, vitest, typecheck, e2e
+bash scripts/dev.sh                         # run the app: web :5173, API :8080
 ```
 
 The demo pushes branches, opens PRs, and merges into `main`, so run it in **your
@@ -67,6 +68,30 @@ mkdir -p .claude && cp scripts/settings.local.example.json .claude/settings.loca
 
 `CLAUDE_CODE_SUBAGENT_MODEL` must be **unset**, otherwise it overrides every
 agent's model and the routing below does nothing.
+
+## Run the app
+
+One command starts everything and stops everything on Ctrl+C:
+
+```bash
+bash scripts/dev.sh
+```
+
+| Process | Port | Started when |
+| --- | --- | --- |
+| Go API (`go run .` in `apps/api`) | 8080 | always |
+| Web (`npm run dev` in `apps/web`, Vite proxies `/api` to 8080) | 5173 | always |
+| users-auth (`go run .` in `apps/users-auth`) | 8081 | `integration/*` branches |
+
+Open http://localhost:5173. The script runs `npm ci` the first time, refuses to start if a
+port is busy, and prefixes logs with `[api]`, `[web]`, `[users-auth]`.
+
+Separately, in two terminals:
+
+```bash
+cd apps/api && go run .      # API :8080 (main.go lives here; `go run .` builds the package)
+cd apps/web && npm run dev   # web :5173
+```
 
 ## Demo flow
 
@@ -171,6 +196,7 @@ apps/api/                  Go API (go vet, go test -race)
 apps/web/                  React + Vite (typecheck, vitest, playwright)
 .github/workflows/ci.yml   go-test, web-test, e2e
 scripts/setup-agents.sh    writes CLAUDE.md, openspec/config.yaml, .claude/agents/*.md
+scripts/dev.sh             run API + web (+ users-auth) with one command, Ctrl+C stops all
 scripts/check.sh           every CI check locally (--no-e2e to skip Playwright)
 scripts/preflight.sh       presenter-laptop checks
 scripts/make-workspace.sh  your own GitHub copy with all demo/*, greenfield/*, integration/* branches
