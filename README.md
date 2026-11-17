@@ -93,6 +93,30 @@ cd apps/api && go run .      # API :8080 (main.go lives here; `go run .` builds 
 cd apps/web && npm run dev   # web :5173
 ```
 
+## Windows
+
+Every script has a PowerShell twin that does the same thing, so the demo runs on native Windows
+(Windows PowerShell 5.1+ or PowerShell 7+). WSL 2 also works with the `.sh` scripts as-is.
+
+| bash (macOS, Linux, WSL, Git Bash) | PowerShell (native Windows) |
+| --- | --- |
+| `bash scripts/preflight.sh` | `.\scripts\preflight.ps1` |
+| `bash scripts/setup-agents.sh` | `.\scripts\setup-agents.ps1` |
+| `bash scripts/check.sh --no-e2e` | `.\scripts\check.ps1 -NoE2e` |
+| `bash scripts/dev.sh` | `.\scripts\dev.ps1` |
+| `bash scripts/make-workspace.sh my-copy --public` | `.\scripts\make-workspace.ps1 -Name my-copy -Public` |
+
+If PowerShell refuses to run scripts, allow local scripts once for your user, or bypass per call:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+# or: powershell -ExecutionPolicy Bypass -File scripts\check.ps1
+```
+
+Windows notes: `check.ps1` runs `go test` without `-race` when no C compiler (gcc) is installed,
+because the race detector needs cgo. `dev.ps1` stops the whole process tree on Ctrl+C.
+`.gitattributes` keeps `*.sh` as LF and `*.ps1` as CRLF on every OS.
+
 ## Demo flow
 
 | Step | What you run | Fallback branch |
@@ -197,6 +221,7 @@ apps/web/                  React + Vite (typecheck, vitest, playwright)
 .github/workflows/ci.yml   go-test, web-test, e2e
 scripts/setup-agents.sh    writes CLAUDE.md, openspec/config.yaml, .claude/agents/*.md
 scripts/dev.sh             run API + web (+ users-auth) with one command, Ctrl+C stops all
+scripts/*.ps1              PowerShell twins of every .sh script (native Windows)
 scripts/check.sh           every CI check locally (--no-e2e to skip Playwright)
 scripts/preflight.sh       presenter-laptop checks
 scripts/make-workspace.sh  your own GitHub copy with all demo/*, greenfield/*, integration/* branches
