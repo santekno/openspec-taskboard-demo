@@ -45,6 +45,9 @@ bash scripts/dev.sh        # open http://localhost:5173
 
 Or separately: `cd apps/api && go run .` and `cd apps/web && npm run dev`.
 
+On native Windows use the PowerShell twins: `.\scripts\dev.ps1`, `.\scripts\check.ps1 -NoE2e`,
+`.\scripts\preflight.ps1` (allow scripts once with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`).
+
 ## What is different from the other scenarios
 
 - **`context` carries the product vision and the stack decision**, because there is no code for the agent to read.
