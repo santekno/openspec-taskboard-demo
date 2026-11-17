@@ -1,0 +1,2 @@
+# Keep shell scripts runnable on Windows (Git Bash / WSL) even with core.autocrlf=true
+*.sh text eol=lf
